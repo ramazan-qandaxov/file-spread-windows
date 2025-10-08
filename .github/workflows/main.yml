@@ -17,4 +17,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: exe
-          path: bin/reporter.exe
+          path: dist/reporter.exe
