@@ -1,1 +1,1 @@
-pyinstaller --noconsole --onefile --add-data "icon.ico;." app.py
+pyinstaller --noconsole --onefile --add-data "icon.ico;." --name reporter app.py
