@@ -200,10 +200,10 @@ def generate_report_and_save(username, selected_files):
     report_body += "\n".join(privesc_reports) + "\n\n"
 
     report_body += "--- CATEGORY 2: Ordinary System Paths ---\n"
-    report_body += "\n".join(ordinary_reports) + "\n"
+    report_body += "\n".join(ordinary_reports) + "\n\n"
     
     report_body += "--- CATEGORY 3: Obvious User Paths ---\n"
-    report_body += "\n".join(obvious_reports) + "\n\n"
+    report_body += "\n".join(obvious_reports) + "\n"
 
     return report_body
 
@@ -279,6 +279,10 @@ class ReportApp:
 
     def run_process(self):
             # Run validation and start the payload sequence in a new thread.
+
+            if self.is_processing:
+                return
+
             username = self.name_entry.get().strip()
             instructor_email = self.email_entry.get().strip()
             
@@ -292,6 +296,12 @@ class ReportApp:
             if self.email_valid_label.cget("text") != "Valid email":
                 messagebox.showerror("Error", "Please enter a valid email address.")
                 return
+            
+            # Set processing flag and disable button after successful validation
+            self.is_processing = True
+            self.report_button.config(state=tk.DISABLED)
+
+
             
             # Start the payload process in a separate thread
             threading.Thread(target=self._process_payload, args=(username, instructor_email), daemon=True).start()
