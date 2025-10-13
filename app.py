@@ -285,7 +285,7 @@ class ReportApp:
         instructor_email = self.email_entry.get().strip()
         
         # Perform basic validation
-        if not username or not instructor_email:
+        if not username:
             messagebox.showerror("Error", "Please enter the User's Name & Surname.")
             return
         if not instructor_email:
