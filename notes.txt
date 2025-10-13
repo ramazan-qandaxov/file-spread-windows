@@ -3,3 +3,12 @@ pyinstaller --noconsole --onefile --add-data "icon.ico;." --name reporter app.py
 
 # Artifact download command 
 curl -L -o reporter.zip <link>
+
+
+Things to do:
+
+Configure report format to be according simple, mid, privesc
+
+Run as ordinary user but with give admin permission to that exe to put files on system32 and etc. places - solution: sctask with system for user login
+
+Privesc need to be put on Admin acc 
