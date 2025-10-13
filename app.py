@@ -264,7 +264,9 @@ class ReportApp:
         self.email_valid_label = tk.Label(master, text="Waiting for input...", fg="gray")
         self.email_valid_label.pack(pady=(5, 0))
         
-        tk.Button(master, text="Report", command=self.run_process).pack(pady=20)
+        self.report_button = tk.Button(master, text="Report", command=self.run_process)
+        self.report_button.pack(pady=20)
+        self.is_processing = False 
 
     def validate_email(self, event=None):
         # Validate the email format in real-time.
@@ -279,12 +281,13 @@ class ReportApp:
 
     def run_process(self):
             # Run validation and start the payload sequence in a new thread.
-
-            if self.is_processing:
-                return
-
+            
             username = self.name_entry.get().strip()
             instructor_email = self.email_entry.get().strip()
+            
+            # Prevent re-execution if already running
+            if self.is_processing:
+                return
             
             # Perform basic validation
             if not username:
@@ -301,8 +304,6 @@ class ReportApp:
             self.is_processing = True
             self.report_button.config(state=tk.DISABLED)
 
-
-            
             # Start the payload process in a separate thread
             threading.Thread(target=self._process_payload, args=(username, instructor_email), daemon=True).start()
 
