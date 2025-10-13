@@ -3,6 +3,7 @@ from email.mime.text import MIMEText
 from tkinter import messagebox
 from datetime import datetime
 import tkinter as tk
+import threading
 import requests
 import getpass
 import smtplib
@@ -150,7 +151,7 @@ def generate_report_and_save(username, selected_files):
     
     obvious_paths = [
         r"C:\Users\Public\Documents",
-        r"C"r"C:\Users\Public\Downloads",
+        r"C:\Users\Public\Downloads",
         r"C:\Users\{username}\Documents",
         r"C:\Users\{username}\Downloads",
         r"C:\Users\{username}\Favorites",
@@ -196,17 +197,14 @@ def generate_report_and_save(username, selected_files):
     report_body += "=================================================\n\n"
 
     report_body += "--- CATEGORY 1: High-Value (PrivEsc) Paths ---\n"
-    report_body += "(Files placed in paths often associated with high-privilege users or sensitive system areas)\n"
     report_body += "\n".join(privesc_reports) + "\n\n"
 
-    report_body += "--- CATEGORY 2: Obvious User Paths ---\n"
-    report_body += "(Files placed in default user data folders like Documents, Downloads, Public, etc.)\n"
-    report_body += "\n".join(obvious_reports) + "\n\n"
-
-    report_body += "--- CATEGORY 3: Ordinary System Paths ---\n"
-    report_body += "(Files placed in common system locations like Temp directories or Program Files)\n"
+    report_body += "--- CATEGORY 2: Ordinary System Paths ---\n"
     report_body += "\n".join(ordinary_reports) + "\n"
     
+    report_body += "--- CATEGORY 3: Obvious User Paths ---\n"
+    report_body += "\n".join(obvious_reports) + "\n\n"
+
     return report_body
 
 def send_email(recipient_email, subject, body):
@@ -280,21 +278,25 @@ class ReportApp:
             self.email_valid_label.config(text="Invalid email format", fg="red")
 
     def run_process(self):
-        # Run the main payload sequence.
-        username = self.name_entry.get().strip()
-        instructor_email = self.email_entry.get().strip()
-        
-        # Perform basic validation
-        if not username:
-            messagebox.showerror("Error", "Please enter the User's Name & Surname.")
-            return
-        if not instructor_email:
-            messagebox.showerror("Error", "Please enter the Instructor's Email.")
-            return
-        if self.email_valid_label.cget("text") != "Valid email":
-            messagebox.showerror("Error", "Please enter a valid email address.")
-            return
+            # Run validation and start the payload sequence in a new thread.
+            username = self.name_entry.get().strip()
+            instructor_email = self.email_entry.get().strip()
             
+            # Perform basic validation
+            if not username:
+                messagebox.showerror("Error", "Please enter the User's Name & Surname.")
+                return
+            if not instructor_email:
+                messagebox.showerror("Error", "Please enter the Instructor's Email.")
+                return
+            if self.email_valid_label.cget("text") != "Valid email":
+                messagebox.showerror("Error", "Please enter a valid email address.")
+                return
+            
+            # Start the payload process in a separate thread
+            threading.Thread(target=self._process_payload, args=(username, instructor_email), daemon=True).start()
+
+    def _process_payload(self, username, instructor_email):
         # 1. Get file list
         api_data = get_file_list(GITHUB_API_URL)
         if not api_data:
