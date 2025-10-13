@@ -16,5 +16,5 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: exe
+          name: reporter
           path: dist/reporter.exe

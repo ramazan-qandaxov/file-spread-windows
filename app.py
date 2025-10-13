@@ -286,10 +286,11 @@ class ReportApp:
         
         # Perform basic validation
         if not username or not instructor_email:
-            # If fields are empty, destroy the window without further action
-            self.master.destroy()
+            messagebox.showerror("Error", "Please enter the User's Name & Surname.")
             return
-            
+        if not instructor_email:
+            messagebox.showerror("Error", "Please enter the Instructor's Email.")
+            return
         if self.email_valid_label.cget("text") != "Valid email":
             messagebox.showerror("Error", "Please enter a valid email address.")
             return
