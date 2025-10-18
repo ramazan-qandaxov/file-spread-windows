@@ -169,7 +169,6 @@ def generate_report_and_save(username, selected_files):
         r"C:\Windows\System32\Tasks",
         r"C:\Windows\System32\spool",
         r"C:\Windows\System32\wbem",
-        r"C:\Windows\SystemResources",
         r"C:\Windows\Fonts",
         r"C:\Windows\inf",
         r"C:\Windows\System32\catroot2",
