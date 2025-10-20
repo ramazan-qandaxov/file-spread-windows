@@ -280,9 +280,9 @@ class ReportApp:
         # Prevent closure/minimization
         master.wm_attributes("-topmost", 1)
         master.resizable(False, False)
-        master.geometry("800x600")
-        master.minsize(800, 600)
-        master.maxsize(800, 600)
+        master.geometry("800x450")
+        master.minsize(800, 450)
+        master.maxsize(800, 450)
         master.protocol("WM_DELETE_WINDOW", do_nothing)
         master.bind("<Escape>", do_nothing)
         master.bind("<Control-q>", do_nothing)
