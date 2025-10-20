@@ -1,6 +1,7 @@
 # Private files
 notes.txt
 automation.py
+faster_automation.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

